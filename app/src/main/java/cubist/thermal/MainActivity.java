@@ -1,6 +1,9 @@
 package cubist.thermal;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -11,11 +14,33 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
     // public BatteryInfoReceiver mBatInfoReceiver;
 
+    private TextView mDataTextView;
+    private TextView mResultTextView;
+    private BroadcastReceiver mMessageReceiver1 = new BroadcastReceiver() {
+        @Override
+
+        public void onReceive(Context context, Intent intent) {
+            String str1 = intent.getStringExtra("DATA1");
+            mDataTextView.setText(str1);
+        }
+
+    };
+
+    private BroadcastReceiver mMessageReceiver2 = new BroadcastReceiver() {
+        @Override
+
+        public void onReceive(Context context, Intent intent) {
+            String str2 = intent.getStringExtra("DATA2");
+            mResultTextView.append("\n" + str2);
+        }
+
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +89,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("service", "stop");
             }
         });
+
+        // Added for Server Result Logging
+        mDataTextView = (TextView) findViewById(R.id.txt_data);
+        mResultTextView = (TextView) findViewById(R.id.txt_result);
+        registerReceiver( mMessageReceiver1, new IntentFilter("GETDATA1"));
+        registerReceiver( mMessageReceiver2, new IntentFilter("GETDATA2"));
     }
 
     @Override

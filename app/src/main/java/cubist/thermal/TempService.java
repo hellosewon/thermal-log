@@ -9,17 +9,32 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by CubePenguin on 2017. 5. 8..
@@ -133,11 +148,134 @@ public class TempService extends Service {
                 final String msg = log;
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ssZ", Locale.getDefault());
                 String fDate = sdf.format(new Date());
+                getReadyToSend(fDate, log);
                 currFileStream.write(String.format("%s,%s\n", fDate, log).getBytes());
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private int paramNum = 10;  // 21
+    private ArrayList<String> serverData = new ArrayList<>();
+    private String initialDateStr;
+    private boolean isFirst = true;
+    private void getReadyToSend(String fDate, String log) {
+        if (isFirst) {
+            initialDateStr = fDate;
+            isFirst = false;
+        }
+        String avgedRow = avgOutData(fDate, log, 5000);  // Average out by 5 sec segment
+        if (avgedRow != null) {
+            serverData.add(avgedRow);
+            if (serverData.size() == 13)
+                serverData.remove(0);
+            // Log.d("getReadyToSend", String.valueOf(avgedRow));
+            // Log.d("getReadyToSend", String.valueOf(serverData.size()));
+            // sendToServer("d");
+            if (serverData.size() == 12) {
+                String dataToSend = trimServerData(serverData);
+                sendToServer(dataToSend);
+
+            }
+        }
+    }
+
+    private void sendToServer(String data) {
+        Log.d("sendToServer", data);
+        Intent intent = new Intent("GETDATA1");
+        intent.putExtra("DATA1", data);
+        sendBroadcast(intent);
+
+        final String requestBody = data;
+        // Instantiate the RequestQueue.
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url ="http://143.248.56.165:8000";
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Display the first 500 characters of the response string.
+                        Log.d("sendToServer", response);
+                        Intent intent = new Intent("GETDATA2");
+                        intent.putExtra("DATA2", response);
+                        sendBroadcast(intent);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("sendToServer", error.toString());
+            }
+        }) {
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                try {
+                    return requestBody == null ? null : requestBody.getBytes("utf-8");
+                } catch (UnsupportedEncodingException uee) {
+                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
+                    return null;
+                }
+            }
+        };
+        // Add the request to the RequestQueue.
+        queue.add(stringRequest);
+    }
+
+    private String trimServerData(ArrayList<String> serverData) {
+        String result = "";
+        result = result + "[[";
+        for (String row : serverData) {
+            result = result + row + ", ";
+        }
+        result = result + "]]";
+        return result;
+    }
+
+    private long segNumber = -1;
+    private float[] tempArray = new float[paramNum];
+    private int cnt = 0;
+    private String avgOutData(String fDate, String log, long avgTime) {
+        String resultRow = null;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ssZ", Locale.getDefault());
+        try {
+            Date initialDate = sdf.parse(initialDateStr);
+            Date newDate = sdf.parse(fDate);
+            long tDifference = getDateDiff(initialDate, newDate, TimeUnit.MILLISECONDS);
+            // Log.d("getReadyToSend", "Time Diff = " + String.valueOf(tDifference));
+            // Log.d("getReadyToSend", log);
+            long quotient = tDifference / avgTime;
+            if (segNumber != -1 && quotient != segNumber) {
+                for (int i=0; i < paramNum; i++) {
+                    tempArray[i] = tempArray[i] / cnt;
+                }
+                segNumber = quotient;
+                // Log.d("avgOutData", Arrays.toString(tempArray));
+                // Log.d("avgOutData-count", String.valueOf(cnt));
+                // clear out temp
+                resultRow = Arrays.toString(tempArray);
+                tempArray = new float[paramNum];
+                cnt = 0;
+                // Log.d("avgOutData", String.valueOf(segNumber));
+            }
+            // Log.d("avgOutData-temping", log);
+            String[] ary = log.split(",");
+            for (int i=0; i < paramNum; i++) {
+                tempArray[i] = tempArray[i] + Float.parseFloat(ary[i]);
+            }
+            cnt++;
+            if (segNumber == -1)
+                segNumber = quotient;
+        } catch(ParseException e) {
+            e.printStackTrace();
+        }
+        return resultRow;
+    }
+
+    public static long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
+        long diffInMillies = date2.getTime() - date1.getTime();
+        return timeUnit.convert(diffInMillies,TimeUnit.MILLISECONDS);
     }
 
     public void closeLogFile() {
