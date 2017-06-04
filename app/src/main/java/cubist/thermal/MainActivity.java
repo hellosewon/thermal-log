@@ -1,13 +1,17 @@
 package cubist.thermal;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -32,15 +36,40 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
+    private int resultCnt = 0;
     private BroadcastReceiver mMessageReceiver2 = new BroadcastReceiver() {
         @Override
 
         public void onReceive(Context context, Intent intent) {
+            resultCnt++;
             String str2 = intent.getStringExtra("DATA2");
             mResultTextView.append("\n" + str2);
+            if (str2.equals("overThreshold") && resultCnt % 12 == 1) {
+                sendNotification();
+            }
         }
 
     };
+
+    public void sendNotification() {
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
+
+        // Create the intent that’ll fire when the user taps the notification//
+        // Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.androidauthority.com/"));
+        // PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        // mBuilder.setContentIntent(pendingIntent);
+
+        mBuilder.setSmallIcon(R.mipmap.ic_launcher);
+        mBuilder.setContentTitle("Thermal");
+        mBuilder.setContentText("폰이 많이 뜨거워집니다.");
+        mBuilder.setTicker("폰이 많이 뜨거워집니다.");
+        mBuilder.setPriority(Notification.PRIORITY_HIGH);
+        mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(1, mBuilder.build());
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,6 +116,8 @@ public class MainActivity extends AppCompatActivity {
                         TempService.class);
                 stopService(intent);
                 Log.d("service", "stop");
+                mDataTextView.setText("");
+                mResultTextView.setText("Server Result");
             }
         });
 

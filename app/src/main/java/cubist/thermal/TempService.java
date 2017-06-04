@@ -156,7 +156,7 @@ public class TempService extends Service {
         }
     }
 
-    private int paramNum = 10;  // 21
+    private int paramNum = 21;  // 21
     private ArrayList<String> serverData = new ArrayList<>();
     private String initialDateStr;
     private boolean isFirst = true;
@@ -262,7 +262,11 @@ public class TempService extends Service {
             // Log.d("avgOutData-temping", log);
             String[] ary = log.split(",");
             for (int i=0; i < paramNum; i++) {
-                tempArray[i] = tempArray[i] + Float.parseFloat(ary[i]);
+                String addThis = ary[i];
+                if (ary[i].equals("null"))
+                    addThis = "0";
+
+                tempArray[i] = tempArray[i] + Float.parseFloat(addThis);
             }
             cnt++;
             if (segNumber == -1)
