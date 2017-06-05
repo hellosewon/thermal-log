@@ -70,8 +70,8 @@ public class MainActivity extends AppCompatActivity {
 
         mBuilder.setSmallIcon(R.mipmap.ic_launcher);
         mBuilder.setContentTitle("Thermal");
-        mBuilder.setContentText("폰이 많이 뜨거워집니다.");
-        mBuilder.setTicker("폰이 많이 뜨거워집니다.");
+        mBuilder.setContentText("폰이 뜨거워져서 위험해질 수 있습니다.");
+        mBuilder.setTicker("폰이 뜨거워져서 위험해질 수 있습니다.");
         mBuilder.setPriority(Notification.PRIORITY_HIGH);
         mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
