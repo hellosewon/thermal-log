@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -36,16 +37,23 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
-    private int resultCnt = 0;
+    private boolean isOneMin = false;
     private BroadcastReceiver mMessageReceiver2 = new BroadcastReceiver() {
         @Override
 
         public void onReceive(Context context, Intent intent) {
-            resultCnt++;
             String str2 = intent.getStringExtra("DATA2");
             mResultTextView.append("\n" + str2);
-            if (str2.equals("overThreshold") && resultCnt % 12 == 1) {
+            if (str2.equals("overThreshold") && !isOneMin) {
                 sendNotification();
+                isOneMin = true;
+                final Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        isOneMin = false;
+                    }
+                }, 1000*55);
             }
         }
 
