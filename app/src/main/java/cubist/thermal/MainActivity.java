@@ -67,11 +67,11 @@ public class MainActivity extends AppCompatActivity {
         // Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.androidauthority.com/"));
         // PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         // mBuilder.setContentIntent(pendingIntent);
-
+        String msg = "Warning: Your smartphone may cause low temperature burns.";
         mBuilder.setSmallIcon(R.mipmap.ic_launcher);
         mBuilder.setContentTitle("Thermal");
-        mBuilder.setContentText("폰이 뜨거워져서 위험해질 수 있습니다.");
-        mBuilder.setTicker("폰이 뜨거워져서 위험해질 수 있습니다.");
+        mBuilder.setContentText(msg);
+        mBuilder.setTicker(msg);
         mBuilder.setPriority(Notification.PRIORITY_HIGH);
         mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
